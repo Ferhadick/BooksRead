@@ -1,10 +1,10 @@
 // --- CONFIGURATION ---
-// Change these two variables to match your exact GitHub details!
 const GITHUB_USERNAME = "Ferhadick"; 
 const REPO_NAME = "BooksRead";
 const SECRET_PHRASE = "uisikabolshoyrost";
 const SHEET_ID = "13lfY5_GSvR8wK-jfgByz_KDblO3K60lJFg8WPveOM5o";
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFiED_FOb2jkazaae4Jf9eCLq0M1S-hpQh7O4qPUExbrs4KWr03dE6AJ47JG1rqw7h/exec";
+
 let books = [];
 
 // Fetch data seamlessly from public Google Sheet
@@ -70,7 +70,7 @@ document.getElementById('open-modal-btn').onclick = () => { modal.style.display 
 document.querySelector('.close-btn').onclick = () => modal.style.display = 'none';
 window.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
 
-// Direct Submission Handling
+// Direct Submission Handling via Form Parameters (Fixes the undefined/null href errors)
 document.getElementById('add-book-form').addEventListener('submit', async function(e) {
     e.preventDefault();
     
@@ -82,18 +82,23 @@ document.getElementById('add-book-form').addEventListener('submit', async functi
     btn.disabled = true;
     btn.innerText = "Saving to spreadsheet...";
 
+    // Format the data as standard URL variables to safely bypass browser roadblocks
+    const formData = new URLSearchParams();
+    formData.append('title', title);
+    formData.append('author', author);
+    formData.append('phrase', phrase);
+
     try {
-        const response = await fetch(APPS_SCRIPT_URL, {
+        await fetch(APPS_SCRIPT_URL, {
             method: 'POST',
-            mode: 'no-cors', // Bypasses browser CORS restrictions smoothly
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, author, phrase })
+            mode: 'no-cors', 
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: formData.toString()
         });
 
-        // Since 'no-cors' mode can't read the response object back directly,
-        // we wait 2 seconds, close up, and reload the sheet data to verify.
+        // Give the sheet 2 seconds to receive and process the new row, then close up and refresh the UI list
         setTimeout(() => {
-            alert("✨ Request sent! Checking list updates...");
+            alert("✨ Book submission sent! Refreshing shelf...");
             modal.style.display = 'none';
             btn.disabled = false;
             btn.innerText = "Save Book Instantly";
@@ -107,4 +112,5 @@ document.getElementById('add-book-form').addEventListener('submit', async functi
     }
 });
 
+// Initial startup call to fill the bookshelf
 loadBooks();
