@@ -5,38 +5,44 @@ const REPO_NAME = "BooksRead";
 const SECRET_PHRASE = "uisikabolshoyrost";
 const SHEET_ID = "13lfY5_GSvR8wK-jfgByz_KDblO3K60lJFg8WPveOM5o";
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFiED_FOb2jkazaae4Jf9eCLq0M1S-hpQh7O4qPUExbrs4KWr03dE6AJ47JG1rqw7h/exec";
-
 let books = [];
 
-// Fetch data from books.json on startup
+// Fetch data seamlessly from public Google Sheet
 async function loadBooks() {
     try {
-        // We fetch directly from the source file in the repository to avoid caching delays
-        const response = await fetch(`https://raw.githubusercontent.com/${GITHUB_USERNAME}/${REPO_NAME}/main/books.json?t=${Date.now()}`);
-        if (!response.ok) throw new Error("Could not load database file.");
-        books = await response.json();
+        const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+        const response = await fetch(csvUrl);
+        const text = await response.text();
+        
+        // Google returns data wrapped in a function, we slice it out cleanly:
+        const json = JSON.parse(text.substring(47, text.length - 2));
+        const rows = json.table.rows;
+        
+        books = rows.map(row => ({
+            title: row.c[0] ? row.c[0].v : '',
+            author: row.c[1] ? row.c[1].v : ''
+        }));
+
         renderBooks(books);
     } catch (error) {
         console.error(error);
-        document.getElementById('books-grid').innerHTML = `<div class="loading">No books found yet. Add the very first book to get started!</div>`;
-        books = [];
+        document.getElementById('books-grid').innerHTML = `<div class="loading">No books found or setup missing.</div>`;
     }
 }
 
-// Draw the book cards onto the page
 function renderBooks(booksToDisplay) {
     const grid = document.getElementById('books-grid');
     grid.innerHTML = '';
 
     if (booksToDisplay.length === 0) {
-        grid.innerHTML = `<div class="loading">No matching books found.</div>`;
+        grid.innerHTML = `<div class="loading">The shelf is empty!</div>`;
         return;
     }
 
-    // Sort books alphabetically by title
-    const sortedBooks = [...booksToDisplay].sort((a, b) => a.title.localeCompare(b.title));
+    // Alphabetical layout sorting
+    const sorted = [...booksToDisplay].sort((a, b) => a.title.localeCompare(b.title));
 
-    sortedBooks.forEach(book => {
+    sorted.forEach(book => {
         const card = document.createElement('div');
         card.className = 'book-card';
         card.innerHTML = `
@@ -47,65 +53,58 @@ function renderBooks(booksToDisplay) {
     });
 }
 
-// Simple security helper to prevent text injection glitches
 function escapeHTML(str) {
-    return str.replace(/[&<>'"]/g, 
-        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
-    );
+    return String(str).replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
 }
 
-// Handle real-time filtering through the search bar
+// Live search filtering 
 document.getElementById('search-input').addEventListener('input', (e) => {
-    const searchTerm = e.target.value.toLowerCase();
-    const filtered = books.filter(book => 
-        book.title.toLowerCase().includes(searchTerm) || 
-        book.author.toLowerCase().includes(searchTerm)
-    );
+    const term = e.target.value.toLowerCase();
+    const filtered = books.filter(b => b.title.toLowerCase().includes(term) || b.author.toLowerCase().includes(term));
     renderBooks(filtered);
 });
 
-// --- MODAL & FORM CONTROLS ---
+// Modal UI animations
 const modal = document.getElementById('book-modal');
-document.getElementById('open-modal-btn').onclick = () => {
-    modal.style.display = 'flex';
-    document.getElementById('github-save-section').classList.add('hidden');
-    document.getElementById('add-book-form').reset();
-};
+document.getElementById('open-modal-btn').onclick = () => { modal.style.display = 'flex'; document.getElementById('add-book-form').reset(); };
 document.querySelector('.close-btn').onclick = () => modal.style.display = 'none';
 window.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
 
-// Handle when Leyla clicks submit
-document.getElementById('add-book-form').addEventListener('submit', function(e) {
+// Direct Submission Handling
+document.getElementById('add-book-form').addEventListener('submit', async function(e) {
     e.preventDefault();
     
+    const btn = document.getElementById('submit-btn');
     const title = document.getElementById('book-title').value.trim();
     const author = document.getElementById('book-author').value.trim();
-    const phraseInput = document.getElementById('secret-phrase').value.trim();
+    const phrase = document.getElementById('secret-phrase').value.trim();
 
-    if (phraseInput !== SECRET_PHRASE) {
-        alert("❌ Incorrect secret phrase. Access denied.");
-        return;
+    btn.disabled = true;
+    btn.innerText = "Saving to spreadsheet...";
+
+    try {
+        const response = await fetch(APPS_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors', // Bypasses browser CORS restrictions smoothly
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, author, phrase })
+        });
+
+        // Since 'no-cors' mode can't read the response object back directly,
+        // we wait 2 seconds, close up, and reload the sheet data to verify.
+        setTimeout(() => {
+            alert("✨ Request sent! Checking list updates...");
+            modal.style.display = 'none';
+            btn.disabled = false;
+            btn.innerText = "Save Book Instantly";
+            loadBooks();
+        }, 2000);
+
+    } catch (error) {
+        alert("❌ Error sending data.");
+        btn.disabled = false;
+        btn.innerText = "Save Book Instantly";
     }
-
-    // 1. Create the temporary updated book array locally
-    const updatedBooks = [...books, { title, author }];
-
-    // 2. Format it cleanly as text so it looks nice in GitHub
-    const jsonString = JSON.stringify(updatedBooks, null, 2);
-
-    // 3. Encode it so it passes perfectly through a Web URL parameter
-    const encodedJson = encodeURIComponent(jsonString);
-
-    // 4. Generate the magic GitHub edit page URL with the text pre-filled
-    const magicGithubUrl = `https://github.com/${GITHUB_USERNAME}/${REPO_NAME}/edit/main/books.json?value=${encodedJson}`;
-
-    // Show the secret save button to Leyla
-    const saveSection = document.getElementById('github-save-section');
-    const githubLink = document.getElementById('github-link');
-    
-    githubLink.href = magicGithubUrl;
-    saveSection.classList.remove('hidden');
 });
 
-// Startup initialization
 loadBooks();
