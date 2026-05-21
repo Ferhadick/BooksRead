@@ -5,55 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leyla's Bookshelf</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Google Fonts for a gorgeous literary feel -->
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..700;1,400..700&family=Plus+Jakarta+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
 
     <header>
         <h1>Leyla's Bookshelf 📚</h1>
-        <p>Before you buy me a book, check this list to make sure I haven't read it yet!</p>
+        <p>Before buying a book for Leyla, check this real-time list!</p>
         <button id="open-modal-btn" class="add-btn">+ Add a Book</button>
     </header>
 
     <main>
-        <!-- Search and Filter Bar -->
         <div class="search-container">
             <input type="text" id="search-input" placeholder="Search by title or author...">
         </div>
-
-        <!-- Where the books will appear -->
         <div id="books-grid" class="books-grid">
-            <div class="loading">Loading bookshelf...</div>
+            <div class="loading">Reading your bookshelf...</div>
         </div>
     </main>
 
-    <!-- The Pop-up Modal for adding books -->
     <div id="book-modal" class="modal">
         <div class="modal-content">
             <span class="close-btn">&times;</span>
             <h2>Add a New Book</h2>
             <form id="add-book-form">
                 <div class="form-group">
-                    <label for="book-title">Book Title</label>
+                    <label>Book Title</label>
                     <input type="text" id="book-title" required placeholder="e.g., The Midnight Library">
                 </div>
                 <div class="form-group">
-                    <label for="book-author">Author Name</label>
+                    <label>Author Name</label>
                     <input type="text" id="book-author" required placeholder="e.g., Matt Haig">
                 </div>
                 <div class="form-group">
-                    <label for="secret-phrase">Secret Phrase</label>
-                    <input type="password" id="secret-phrase" required placeholder="Enter secret phrase to unlock saving">
+                    <label>Secret Phrase</label>
+                    <input type="password" id="secret-phrase" required placeholder="Enter secret phrase">
                 </div>
-                <button type="submit" class="submit-btn">Verify & Generate Save Link</button>
+                <button type="submit" id="submit-btn" class="submit-btn">Save Book Instantly</button>
             </form>
-
-            <!-- Hidden GitHub Save Section that appears only if the password is correct -->
-            <div id="github-save-section" class="github-save-section hidden">
-                <p class="success-msg">🎉 Secret phrase verified! To complete the save, click the button below, then simply click <strong>"Commit changes"</strong> on GitHub.</p>
-                <a id="github-link" target="_blank" class="github-btn">🚀 Save Changes on GitHub</a>
-            </div>
         </div>
     </div>
 
