@@ -18,7 +18,8 @@ async function loadBooks() {
         const json = JSON.parse(text.substring(47, text.length - 2));
         const rows = json.table.rows;
         
-        books = rows.map(row => ({
+        // rows.slice(1) skips the header row (Title/Author) so it doesn't show up as a card!
+        books = rows.slice(1).map(row => ({
             title: row.c[0] ? row.c[0].v : '',
             author: row.c[1] ? row.c[1].v : ''
         }));
@@ -53,6 +54,7 @@ function renderBooks(booksToDisplay) {
     });
 }
 
+// Prevents custom code injection and keeps data safe
 function escapeHTML(str) {
     return String(str).replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
 }
@@ -70,7 +72,7 @@ document.getElementById('open-modal-btn').onclick = () => { modal.style.display 
 document.querySelector('.close-btn').onclick = () => modal.style.display = 'none';
 window.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
 
-// Direct Submission Handling via Form Parameters (Fixes the undefined/null href errors)
+// Direct Submission Handling via Form Parameters (Bypasses CORS restrictions)
 document.getElementById('add-book-form').addEventListener('submit', async function(e) {
     e.preventDefault();
     
