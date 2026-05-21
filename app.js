@@ -1,7 +1,7 @@
 // --- CONFIGURATION ---
 // Change these two variables to match your exact GitHub details!
 const GITHUB_USERNAME = "Ferhadick"; 
-const REPO_NAME = "leylas-bookshelf";
+const REPO_NAME = "BooksRead";
 const SECRET_PHRASE = "uisikabolshoyrost";
 
 let books = [];
