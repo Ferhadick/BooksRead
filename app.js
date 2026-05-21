@@ -3,6 +3,8 @@
 const GITHUB_USERNAME = "Ferhadick"; 
 const REPO_NAME = "BooksRead";
 const SECRET_PHRASE = "uisikabolshoyrost";
+const SHEET_ID = "13lfY5_GSvR8wK-jfgByz_KDblO3K60lJFg8WPveOM5o";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFiED_FOb2jkazaae4Jf9eCLq0M1S-hpQh7O4qPUExbrs4KWr03dE6AJ47JG1rqw7h/exec";
 
 let books = [];
 
